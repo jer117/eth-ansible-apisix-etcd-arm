@@ -117,7 +117,7 @@ COPY --from=builder /usr/local/bin/etcdutl /usr/local/bin/etcdutl
 # Copy APISIX installation from builder
 COPY --from=builder /usr/local/apisix /usr/local/apisix
 COPY --from=builder /usr/bin/apisix /usr/bin/apisix
-COPY --from=builder /tmp/apisix/apisix /usr/local/apisix/apisix
+COPY --from=builder /tmp/apisix/apisix /usr/local/share/lua/5.1/apisix
 COPY --from=builder /tmp/apisix/conf /usr/local/apisix/conf-template
 COPY --from=builder /usr/local/share/lua /usr/local/share/lua
 
