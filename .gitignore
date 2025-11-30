@@ -1,0 +1,52 @@
+# Custom configuration files (keep examples)
+config.yaml
+
+# Docker volumes and data
+*.log
+logs/
+data/
+
+# Build artifacts
+*.tar
+*.tar.gz
+*.zip
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS files
+Thumbs.db
+*.bak
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Environment files
+.env
+.env.local
+
+# Test output
+test-results/
+coverage/
+
+# Node modules (if any Node.js tools are used)
+node_modules/
+
+# Python (if any Python tools are used)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+
+# Docker
+.dockerignore.swp
+

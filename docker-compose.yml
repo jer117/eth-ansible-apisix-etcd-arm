@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  apisix:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VERSION: 3.14.0
+    image: apisix-arm:3.14.0
+    container_name: apisix
+    restart: unless-stopped
+    ports:
+      - "9080:9080"   # APISIX HTTP
+      - "9443:9443"   # APISIX HTTPS
+      - "9180:9180"   # APISIX Admin API
+      - "2379:2379"   # etcd client
+    volumes:
+      # Uncomment to use custom configuration
+      # - ./config.yaml:/usr/local/apisix/conf/config.yaml
+      
+      # Persistent etcd data
+      - apisix-etcd-data:/var/lib/etcd
+      
+      # Logs
+      - apisix-logs:/usr/local/apisix/logs
+      - etcd-logs:/var/log/etcd
+    environment:
+      - TZ=UTC
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9080/apisix/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - apisix-net
+
+volumes:
+  apisix-etcd-data:
+    driver: local
+  apisix-logs:
+    driver: local
+  etcd-logs:
+    driver: local
+
+networks:
+  apisix-net:
+    driver: bridge
+
