@@ -1,0 +1,108 @@
+name: Docker CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+      - name: Extract version from Dockerfile
+        id: get_version
+        run: |
+          VERSION=$(grep -m1 -oP '^ARG VERSION=\K.*' Dockerfile)
+          echo "VERSION=$VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/eth-ansible-apisix-etcd-arm:${{ env.VERSION }}
+            ${{ secrets.DOCKER_USERNAME }}/eth-ansible-apisix-etcd-arm:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          build-args: |
+            VERSION=${{ env.VERSION }}
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+  # run-and-test:
+  #   name: Run and Test Docker Image
+  #   needs: build-and-push
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Pull Docker Image
+  #       run: docker pull ${{ secrets.DOCKER_USERNAME }}/eth-ansible-apisix-etcd-arm:${{ env.VERSION }}
+
+  #     - name: Run Nethermind
+  #       env:
+  #         DATA_DIR: /tmp/data
+  #         TOKEN_DIR: /tmp/token
+  #       run: |
+  #         docker run -d --rm --name test-container \
+  #           -p 8545:8545 \
+  #           -p 8551:8551 \
+  #           -p 30303:30303 \
+  #           -v $DATA_DIR:/data \
+  #           -v $TOKEN_DIR:/exec_token \
+  #           ${{ secrets.DOCKER_USERNAME }}/eth-ansible-apisix-etcd-arm:${{ env.VERSION }} \
+  #           --datadir "/data" \
+  #           --config holesky \
+  #           --Init.WebSocketsEnabled true \
+  #           --JsonRpc.Enabled true \
+  #           --JsonRpc.Host "0.0.0.0" \
+  #           --JsonRpc.Port 8545 \
+  #           --JsonRpc.EnginePort 8551 \
+  #           --JsonRpc.EngineHost "0.0.0.0" \
+  #           --JsonRpc.EnabledModules "[\"admin\",\"eth\",\"subscribe\",\"net\",\"web3\",\"txpool\",\"debug\"]" \
+  #           --JsonRpc.JwtSecretFile "/exec_token/token" \
+  #           --Network.P2PPort 30303
+  #         sleep 10  # Give the container time to start
+
+  #     - name: Fetch logs
+  #       run: docker logs test-container || echo "Container not running"
+
+  #     - name: Test Docker Container
+  #       run: |
+  #         curl -X POST -H "Content-Type: application/json" \
+  #           --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":1}' \
+  #           http://localhost:8545 || exit 1
+
+  #     - name: Clean up
+  #       if: always()
+  #       run: |
+  #         docker stop test-container || true
+  #         docker rm test-container || true

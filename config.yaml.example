@@ -1,0 +1,102 @@
+#
+# Apache APISIX Configuration Example for ARM64
+# This is a basic configuration file. Copy to config.yaml and customize as needed.
+#
+
+apisix:
+  node_listen: 9080              # APISIX listening port
+  enable_ipv6: false
+  
+  allow_admin:                   # Admin API access control
+    - 0.0.0.0/0                 # Allow all (change in production!)
+  
+  admin_key:
+    - name: "admin"
+      key: test  # Change this in production!
+      role: admin
+
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  
+  admin:
+    admin_listen:
+      port: 9180
+    https_admin: false
+    allow_admin:
+      - 0.0.0.0/0              # Allow all (change in production!)
+    admin_api_version: v3
+
+  etcd:
+    host:                        # etcd address
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"            # apisix configurations prefix
+    timeout: 30                  # 30 seconds
+
+nginx_config:
+  error_log: "logs/error.log"
+  error_log_level: "warn"       # warn, error, info, debug
+  
+  http:
+    access_log: "logs/access.log"
+    access_log_format: '$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent"'
+    
+    # Enable custom Lua modules
+    custom_lua_shared_dict:
+      prometheus-metrics: 15m
+
+plugin_attr:
+  prometheus:
+    export_addr:
+      ip: "0.0.0.0"
+      port: 9091
+
+plugins:
+  - api-breaker
+  - authz-keycloak
+  - basic-auth
+  - batch-requests
+  - consumer-restriction
+  - cors
+  - echo
+  - fault-injection
+  - grpc-transcode
+  - hmac-auth
+  - http-logger
+  - ip-restriction
+  - jwt-auth
+  - kafka-logger
+  - key-auth
+  - limit-conn
+  - limit-count
+  - limit-req
+  - node-status
+  - openid-connect
+  - prometheus
+  - proxy-cache
+  - proxy-mirror
+  - proxy-rewrite
+  - redirect
+  - referer-restriction
+  - request-id
+  - request-validation
+  - response-rewrite
+  - serverless-post-function
+  - serverless-pre-function
+  - sls-logger
+  - syslog
+  - tcp-logger
+  - udp-logger
+  - uri-blocker
+  - wolf-rbac
+  - zipkin
+  - traffic-split
+  - gzip
+  - real-ip
+
+stream_plugins:
+  - mqtt-proxy
+  - ip-restriction
+  - limit-conn
+
